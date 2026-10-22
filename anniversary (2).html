@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Happy Anniversary — Our Vault of Love</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Mali:wght@400;500;600;700&family=Playfair+Display:wght@600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary-pink: #ff85a2;
+      --soft-pink: #fde8ed;
+      --cream-bg: #fffbf7;
+      --text-main: #4a3b32;
+      --gold-accent: #e5b072;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Prompt', sans-serif; background-color: var(--cream-bg); color: var(--text-main); overflow-x: hidden; min-height: 100vh; }
+
+    /* BGM Button */
+    .bgm-btn {
+      position: fixed; bottom: 20px; right: 20px; z-index: 1000;
+      width: 46px; height: 46px; border-radius: 50%;
+      background: white; border: 2px solid var(--primary-pink);
+      color: var(--primary-pink); display: flex; align-items: center; justify-content: center;
+      cursor: pointer; box-shadow: 0 4px 12px rgba(255, 133, 162, 0.3);
+    }
+    .bgm-btn.playing { background: var(--primary-pink); color: white; }
+
+    /* VAULT ENTRANCE SCREEN */
+    #vault-screen {
+      position: fixed; inset: 0; z-index: 999;
+      background: linear-gradient(135deg, #ffdde1 0%, #ee9ca7 100%);
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px; transition: opacity 0.6s ease, visibility 0.6s ease;
+    }
+    #vault-screen.opened { opacity: 0; visibility: hidden; pointer-events: none; }
+
+    .vault-door {
+      width: 100%; max-width: 360px;
+      background: #fff0f3; border-radius: 28px;
+      box-shadow: 0 20px 40px rgba(184, 75, 109, 0.3), inset 0 0 0 8px #ffccd5;
+      padding: 24px 20px; display: flex; flex-direction: column; align-items: center;
+      transition: transform 0.8s ease, opacity 0.8s ease;
+    }
+    .vault-door.swing-open { transform: scale(0.85); opacity: 0; }
+
+    .vault-plate {
+      background: white; border: 2px solid var(--gold-accent);
+      border-radius: 12px; padding: 6px 18px; margin-bottom: 14px;
+    }
+    .vault-plate h2 {
+      font-family: 'Playfair Display', serif; font-size: 1.05rem;
+      color: #b5179e; letter-spacing: 1px; font-weight: 700;
+    }
+
+    .wheel-container {
+      width: 86px; height: 86px; margin: 4px 0 14px;
+      position: relative; display: flex; align-items: center; justify-content: center;
+    }
+    .safe-wheel {
+      width: 100%; height: 100%; border-radius: 50%;
+      background: radial-gradient(circle, #ffe5ec 20%, #f4acb7 100%);
+      border: 5px solid #e29578; display: flex; align-items: center; justify-content: center;
+      transition: transform 0.6s ease;
+    }
+    .wheel-center-heart {
+      width: 32px; height: 32px; background: #e63946; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; font-size: 0.95rem;
+    }
+
+    /* PIN Display */
+    .pin-display-box {
+      width: 100%; max-width: 250px; background: white;
+      border: 2px solid #ffccd5; border-radius: 14px;
+      padding: 10px; display: flex; justify-content: center; gap: 6px; margin-bottom: 14px;
+    }
+    .pin-slot {
+      width: 20px; height: 26px; border-bottom: 2px solid #f4978e;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; font-weight: 700; color: #e63946;
+    }
+
+    /* Keypad */
+    .keypad-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+      width: 100%; max-width: 250px;
+    }
+    .key-btn {
+      aspect-ratio: 1; border-radius: 14px; background: white;
+      border: 2px solid #ffe5ec; color: #6d597a; font-size: 1.25rem;
+      font-weight: 600; cursor: pointer; box-shadow: 0 3px 6px rgba(0,0,0,0.06);
+    }
+    .key-btn:active { background: #ffe5ec; transform: scale(0.95); }
+    .key-btn.action-btn { font-size: 0.95rem; background: #fff0f3; color: #e63946; }
+
+    .pin-error-msg {
+      font-size: 0.8rem; color: #e63946; margin-top: 10px; height: 18px;
+      font-weight: 500; opacity: 0; transition: opacity 0.2s;
+    }
+    .pin-error-msg.show { opacity: 1; }
+
+    /* MAIN CONTENT */
+    #main-content { display: none; }
+    #main-content.visible { display: block; }
+
+    .hero-banner { text-align: center; padding: 50px 20px 30px; }
+    .hero-badge {
+      display: inline-block; padding: 4px 14px; background: #ffe3e8;
+      color: #d81e5b; font-size: 0.8rem; border-radius: 20px; font-weight: 600; margin-bottom: 10px;
+    }
+    .hero-title { font-family: 'Playfair Display', serif; font-size: 2rem; color: #3d2b27; margin-bottom: 8px; }
+    .hero-subtitle { font-family: 'Mali', cursive; font-size: 1rem; color: #8c7a6b; }
+
+    .section-wrap { max-width: 1000px; margin: 0 auto; padding: 36px 16px; }
+    .section-header { text-align: center; margin-bottom: 26px; }
+    .section-header h3 { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: #4a3b32; }
+    .section-header p { font-size: 0.9rem; color: #9a8c82; font-family: 'Mali', cursive; margin-top: 4px; }
+
+    /* Gallery */
+    .gallery-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px;
+    }
+    @media (min-width: 600px) {
+      .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 18px; }
+    }
+    .photo-card {
+      background: white; border-radius: 14px; overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #f7e6eb; cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .photo-card:hover { transform: translateY(-4px); }
+    .photo-thumb-wrap { width: 100%; aspect-ratio: 1; position: relative; background: #fff3f5; }
+    .photo-thumb-wrap img { width: 100%; height: 100%; object-fit: cover; }
+    .photo-badge {
+      position: absolute; top: 8px; left: 8px; background: rgba(255,255,255,0.9);
+      color: #d81e5b; font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 10px;
+    }
+    .photo-caption { padding: 10px; text-align: center; }
+    .photo-caption h5 { font-size: 0.85rem; color: #4a3b32; margin-bottom: 2px; }
+    .photo-caption p { font-size: 0.72rem; color: #9c8e85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Lightbox */
+    .lightbox-modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000;
+      display: none; align-items: center; justify-content: center; padding: 16px;
+    }
+    .lightbox-modal.active { display: flex; }
+    .lightbox-box { max-width: 440px; width: 100%; background: white; border-radius: 20px; overflow: hidden; position: relative; }
+    .lightbox-img-wrap { width: 100%; max-height: 360px; background: #000; display: flex; align-items: center; justify-content: center; }
+    .lightbox-img-wrap img { max-width: 100%; max-height: 360px; object-fit: contain; }
+    .lightbox-info { padding: 16px; text-align: center; }
+    .lightbox-info h4 { font-family: 'Playfair Display', serif; font-size: 1.15rem; color: #4a3b32; }
+    .lightbox-info p { font-family: 'Mali', cursive; font-size: 0.9rem; color: #7d6b60; margin-top: 6px; }
+    .lightbox-close-btn {
+      position: absolute; top: 12px; right: 12px; width: 32px; height: 32px;
+      border-radius: 50%; background: rgba(0,0,0,0.5); color: white; border: none; font-size: 1.1rem; cursor: pointer;
+    }
+
+    /* Postcard */
+    .postcard-container { max-width: 480px; min-height: 320px; margin: 0 auto; cursor: pointer; }
+    .postcard-inner {
+      width: 100%; min-height: 320px; background: linear-gradient(135deg, #ffe5ec 0%, #ffc2d1 100%);
+      border: 3px dashed #ff85a2; border-radius: 20px; padding: 24px;
+      box-shadow: 0 10px 25px rgba(255, 133, 162, 0.2); position: relative;
+    }
+    .postcard-inner.flipped {
+      background: #fffdfa; border-style: solid; border-color: #ebd8c8;
+    }
+    .letter-body {
+      font-family: 'Mali', cursive; font-size: 0.92rem; line-height: 1.7; color: #4a3b32; white-space: pre-line;
+    }
+    .letter-footer { text-align: right; font-family: 'Caveat', cursive; font-size: 1.4rem; color: #d81e5b; margin-top: 10px; }
+
+    /* Gashapon */
+    .gasha-machine {
+      max-width: 320px; margin: 0 auto; background: white; border-radius: 30px;
+      border: 4px solid #ffccd5; padding: 24px 20px; text-align: center;
+      box-shadow: 0 12px 30px rgba(255, 182, 193, 0.3);
+    }
+    .gasha-globe {
+      width: 190px; height: 190px; border-radius: 50%; background: #fff0f3;
+      border: 5px solid #ffb3c6; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;
+    }
+    .capsule-cluster { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: 140px; }
+    .capsule {
+      width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    }
+    .c-pink { background: linear-gradient(135deg, #ff758c 50%, #fff 50%); }
+    .c-yellow { background: linear-gradient(135deg, #ffdd59 50%, #fff 50%); }
+    .c-blue { background: linear-gradient(135deg, #4bcffa 50%, #fff 50%); }
+    .c-purple { background: linear-gradient(135deg, #ef5777 50%, #fff 50%); }
+
+    .gasha-turn-btn {
+      background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
+      color: white; border: none; font-size: 1rem; font-weight: 700;
+      padding: 12px 30px; border-radius: 25px; cursor: pointer;
+      box-shadow: 0 6px 16px rgba(255, 117, 140, 0.35);
+    }
+
+    /* Coupon Modal */
+    .coupon-modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10001;
+      display: none; align-items: center; justify-content: center; padding: 16px;
+    }
+    .coupon-modal.active { display: flex; }
+    .coupon-ticket {
+      background: white; max-width: 320px; width: 100%; border-radius: 22px;
+      border: 3px dashed var(--primary-pink); padding: 24px 20px; text-align: center;
+    }
+    .coupon-icon { font-size: 3rem; margin-bottom: 8px; }
+    .coupon-title { font-size: 1.2rem; font-weight: 700; color: #d81e5b; margin-bottom: 6px; }
+    .coupon-desc { font-family: 'Mali', cursive; font-size: 0.9rem; color: #6d597a; margin-bottom: 18px; }
+    .coupon-close-btn {
+      background: #ffe3e8; color: #d81e5b; border: none; padding: 8px 22px;
+      border-radius: 16px; font-weight: 600; cursor: pointer;
+    }
+
+    /* Doodle */
+    .doodle-card {
+      max-width: 440px; margin: 0 auto; background: white; border-radius: 22px;
+      padding: 18px; border: 2px solid #ffccd5;
+    }
+    .canvas-wrap { width: 100%; border-radius: 14px; overflow: hidden; border: 1px solid #f2e2e7; touch-action: none; }
+    canvas { display: block; width: 100%; height: 260px; background: white; cursor: crosshair; }
+    .doodle-tools { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
+    .color-swatch { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; display: inline-block; margin-right: 4px; }
+    .btn-tool { padding: 6px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: none; }
+    .btn-clear { background: #f0f0f0; color: #666; }
+    .btn-save { background: var(--primary-pink); color: white; margin-left: 6px; }
+
+    .music-toast {
+      position: fixed; right: 16px; bottom: 76px; z-index: 1001; max-width: 260px;
+      background: white; color: #6d597a; border: 2px solid var(--primary-pink);
+      border-radius: 14px; padding: 8px 12px; font-size: 0.78rem; line-height: 1.4;
+      box-shadow: 0 4px 12px rgba(255,133,162,0.3); opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    .music-toast.show { opacity: 1; }
+
+    footer { text-align: center; padding: 30px 16px 60px; color: #b5a8a0; font-family: 'Mali', cursive; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+
+  <button id="bgmToggle" class="bgm-btn" title="เปิด/ปิด เสียงเพลง">🎵</button>
+  <div style="position:fixed;left:0;bottom:0;width:200px;height:200px;opacity:0.01;pointer-events:none;z-index:-1;overflow:hidden;" aria-hidden="true"><div id="ytPlayerHolder"></div></div>
+  <div id="musicToast" class="music-toast"></div>
+
+  <!-- 1. VAULT PASSCODE SCREEN -->
+  <div id="vault-screen">
+    <div class="vault-door" id="vaultDoor">
+      <div class="vault-plate">
+        <h2>★ VAULT OF LOVE ★</h2>
+      </div>
+
+      <div class="wheel-container">
+        <div class="safe-wheel" id="safeWheel">
+          <div class="wheel-center-heart">❤️</div>
+        </div>
+      </div>
+
+      <div class="pin-display-box">
+        <div class="pin-slot"></div>
+        <div class="pin-slot"></div>
+        <div class="pin-slot"></div>
+        <div class="pin-slot"></div>
+        <div class="pin-slot"></div>
+        <div class="pin-slot"></div>
+        <div class="pin-slot"></div>
+        <div class="pin-slot"></div>
+      </div>
+
+      <div class="keypad-grid">
+        <button class="key-btn" onclick="pressKey('1')">1</button>
+        <button class="key-btn" onclick="pressKey('2')">2</button>
+        <button class="key-btn" onclick="pressKey('3')">3</button>
+        <button class="key-btn" onclick="pressKey('4')">4</button>
+        <button class="key-btn" onclick="pressKey('5')">5</button>
+        <button class="key-btn" onclick="pressKey('6')">6</button>
+        <button class="key-btn" onclick="pressKey('7')">7</button>
+        <button class="key-btn" onclick="pressKey('8')">8</button>
+        <button class="key-btn" onclick="pressKey('9')">9</button>
+        <button class="key-btn action-btn" onclick="clearPin()">C</button>
+        <button class="key-btn" onclick="pressKey('0')">0</button>
+        <button class="key-btn action-btn" onclick="deletePin()">⌫</button>
+      </div>
+
+      <div class="pin-error-msg" id="pinError">รหัสผ่านไม่ถูกต้องน้า ลองใหม่อีกครั้ง ❤️</div>
+    </div>
+  </div>
+
+  <!-- 2. MAIN CONTENT -->
+  <div id="main-content">
+    <header class="hero-banner">
+      <div class="hero-badge">HAPPY ANNIVERSARY</div>
+      <h1 class="hero-title">Museum of Our Story</h1>
+      <p class="hero-subtitle">รวบรวมทุกรอยยิ้ม ความสุข และ 64 ช่วงเวลาที่มีค่าที่สุดของเราสองคน</p>
+    </header>
+
+    <!-- SECTION I: GALLERY (1 - 64) -->
+    <section class="section-wrap">
+      <div class="section-header">
+        <h3>Memories Collection (1 – 64)</h3>
+        <p>แตะที่ภาพเพื่อเปิดดูความทรงจำขนาดใหญ่</p>
+      </div>
+      <div class="gallery-grid" id="galleryGrid"></div>
+    </section>
+
+    <!-- SECTION II: POSTCARD -->
+    <section class="section-wrap">
+      <div class="section-header">
+        <h3>Special Letter for You</h3>
+        <p>แตะที่โปสการ์ดเพื่อพลิกอ่านความในใจ 💌</p>
+      </div>
+      <div class="postcard-container" onclick="togglePostcard()">
+        <div class="postcard-inner" id="postcardInner">
+          <div id="cardFront" style="text-align: center; padding: 30px 10px;">
+            <div style="font-size: 3rem; margin-bottom: 12px;">💌</div>
+            <h4 style="font-family: 'Playfair Display', serif; font-size: 1.35rem; color: #800f2f;">To My Favorite Person in the World</h4>
+            <p style="font-family: 'Mali', cursive; font-size: 0.85rem; color: #a4133c; margin-top: 8px;">— แตะตรงนี้เพื่อเปิดอ่านจดหมาย —</p>
+          </div>
+          <div id="cardBack" style="display: none;">
+            <div class="letter-body">
+              ถึงคนโปรดของเรา ❤️
+              
+              ขอบคุณสำหรับทุก ๆ วันที่อยู่ข้างกันนะ
+              ทุกช่วงเวลาที่มีเธอเข้ามา มันทำให้โลกนี้น่ารักและอบอุ่นขึ้นเยอะมาก
+              ไม่ว่าวันธรรมดาหรือวันพิเศษ แค่มีเธอกินข้าวด้วย มีเธอให้บ่น ให้แกล้ง
+              และได้จับมือเธอไปเรื่อย ๆ มันคือสิ่งที่ดีที่สุดแล้ว
+
+              สุขสันต์วันครบรอบนะคนเก่ง
+              รักเธอที่สุดในโลกเลย! อยู่เป็นความสุขของกันแบบนี้ไปนาน ๆ นะ
+            </div>
+            <div class="letter-footer">With all my love, always ♥</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION III: GASHAPON -->
+    <section class="section-wrap">
+      <div class="section-header">
+        <h3>Love Gashapon</h3>
+        <p>ตู้สุ่มคูปองความรักสำหรับแฟน หมุนได้เรื่อย ๆ เลยนะ!</p>
+      </div>
+      <div class="gasha-machine">
+        <div class="gasha-globe">
+          <div class="capsule-cluster" id="gashaCaps">
+            <div class="capsule c-pink">🎁</div>
+            <div class="capsule c-yellow">💖</div>
+            <div class="capsule c-blue">✨</div>
+            <div class="capsule c-purple">🧸</div>
+          </div>
+        </div>
+        <button class="gasha-turn-btn" onclick="spinGashapon()">หมุนกาชาปอง ↺</button>
+      </div>
+    </section>
+
+    <!-- SECTION IV: DOODLE -->
+    <section class="section-wrap">
+      <div class="section-header">
+        <h3>Doodle & Wish</h3>
+        <p>วาดรูปหรือเขียนข้อความตอบกลับให้เราหน่อยนะ 🎨</p>
+      </div>
+      <div class="doodle-card">
+        <div class="canvas-wrap">
+          <canvas id="doodleCanvas" width="400" height="260"></canvas>
+        </div>
+        <div class="doodle-tools">
+          <div>
+            <span class="color-swatch" style="background: #e63946;" onclick="setColor('#e63946')"></span>
+            <span class="color-swatch" style="background: #ff85a2;" onclick="setColor('#ff85a2')"></span>
+            <span class="color-swatch" style="background: #e5b072;" onclick="setColor('#e5b072')"></span>
+            <span class="color-swatch" style="background: #333333;" onclick="setColor('#333333')"></span>
+          </div>
+          <div>
+            <button class="btn-tool btn-clear" onclick="clearCanvas()">ล้าง</button>
+            <button class="btn-tool btn-save" onclick="saveCanvas()">บันทึกรูป</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>Made with immense love for you, forever and always. ❤️</footer>
+  </div>
+
+  <!-- LIGHTBOX -->
+  <div class="lightbox-modal" id="lightboxModal" onclick="closeLightbox(event)">
+    <div class="lightbox-box">
+      <button class="lightbox-close-btn" onclick="forceCloseLightbox()">✕</button>
+      <div class="lightbox-img-wrap">
+        <img id="lightboxImg" src="" alt="Memory">
+      </div>
+      <div class="lightbox-info">
+        <h4 id="lightboxTitle">NO. 1</h4>
+        <p id="lightboxDesc">ช่วงเวลาแสนพิเศษของเรา</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- COUPON MODAL -->
+  <div class="coupon-modal" id="couponModal">
+    <div class="coupon-ticket">
+      <div class="coupon-icon" id="couponIcon">🎟️</div>
+      <div class="coupon-title" id="couponTitle">คูปองพิเศษ</div>
+      <div class="coupon-desc" id="couponDesc">รายละเอียดคูปอง</div>
+      <button class="coupon-close-btn" onclick="closeCoupon()">เก็บคูปองไว้ใช้ ❤️</button>
+    </div>
+  </div>
+
+  <script>
+    // 1. PIN VAULT
+    const CORRECT_PIN = "23102025";
+    let enteredPin = "";
+
+    function updatePinDisplay() {
+      const slots = document.querySelectorAll(".pin-slot");
+      slots.forEach((slot, idx) => {
+        slot.innerText = idx < enteredPin.length ? "●" : "";
+      });
+    }
+
+    function pressKey(n) {
+      if (enteredPin.length < 8) {
+        enteredPin += n;
+        updatePinDisplay();
+        if (enteredPin.length === 8) {
+          if (enteredPin === CORRECT_PIN) {
+            unlockVault();
+          } else {
+            const err = document.getElementById("pinError");
+            err.classList.add("show");
+            setTimeout(() => {
+              enteredPin = "";
+              updatePinDisplay();
+              err.classList.remove("show");
+            }, 900);
+          }
+        }
+      }
+    }
+
+    function clearPin() { enteredPin = ""; updatePinDisplay(); }
+    function deletePin() { enteredPin = enteredPin.slice(0, -1); updatePinDisplay(); }
+
+    function unlockVault() {
+      startMusic();
+      document.getElementById("safeWheel").style.transform = "rotate(720deg)";
+      document.getElementById("vaultDoor").classList.add("swing-open");
+      setTimeout(() => {
+        document.getElementById("vault-screen").classList.add("opened");
+        document.getElementById("main-content").classList.add("visible");
+      }, 700);
+    }
+
+    // 2. GALLERY (1 TO 64)
+    const captions64 = [
+      "วันแรกที่เราเริ่มเรื่องราวด้วยกัน", "รอยยิ้มที่ชอบที่สุด", "ทริปแรกที่มีเธอไปด้วย",
+      "จับมือกันแน่น ๆ นะ", "กาแฟแก้วโปรดกับคนโปรด", "แอบถ่ายตอนเธอกำลังเผลอ",
+      "ความสุขง่าย ๆ แค่มีเธอ", "วันฝนตกที่แสนอบอุ่น", "มื้ออร่อยที่มีเธอตรงข้าม",
+      "เสียงหัวเราะของเธอคือของขวัญ", "แวะดูพระอาทิตย์ตกด้วยกัน", "รูปคู่สุดน่ารัก",
+      "เดินเล่นเรื่อยเปื่อยด้วยกัน", "ขอบคุณที่คอยซัพพอร์ตกันนะ", "เธอสวยที่สุดเสมอ",
+      "ของหวานที่หวานน้อยกว่าเธอ", "ไอติมละลายเพราะเธอหวานเกิน", "กอดกันแน่น ๆ ให้หายเหนื่อย",
+      "หน้าตาน่ารักตอนงอน", "วิวหลักล้านแต่ชอบมองเธอมากกว่า", "ดอกไม้ที่คู่ควรกับคนสวย",
+      "มุมถ่ายรูปประจำของเรา", "วันสบาย ๆ แค่นอนดูซีรีส์ด้วยกัน", "แวะกินของโปรดของเธอ",
+      "รูปนี้เธอยิ้มสดใสมาก", "ขับรถไปเรื่อย ๆ มีเพลงกับเธอ", "คนเก่งของเรา",
+      "แววตาที่ทำให้ตกหลุมรักซ้ำ ๆ", "ของขวัญที่พิเศษที่สุดคือเธอ", "วันเกิดที่มีเธอเป่าเค้กด้วย",
+      "ทริปทะเลที่จำไม่ลืม", "ความทรงจำในฤดูหนาว", "มือเล็ก ๆ ที่เราชอบกุมไว้",
+      "หัวเราะจนตาหยี", "ขอบคุณที่เป็นรอยยิ้มให้กัน", "ที่ตรงนี้มีแค่เราสองคน",
+      "ก้าวไปด้วยกันทีละสเต็ป", "วันครบรอบที่เราเติบโตด้วยกัน", "ตอนแอบมองเธอตั้งใจทำงาน",
+      "อาหารฝีมือเธออร่อยที่สุด", "เที่ยวคาเฟ่น่ารัก ๆ ด้วยกัน", "รูปโพลารอยด์แห่งความทรงจำ",
+      "สู้ ๆ ไปด้วยกันทุกวัน", "ทุกที่กลายเป็นที่โปรดเมื่อมีเธอ", "จับมือกันข้ามถนน",
+      "วันช้อปปิ้งที่สนุกเพราะมีเธอเลือกให้", "ภาพคู่มุมโปรดในกระจก", "ยิ้มหวานแบบนี้ใจละลาย",
+      "ตั๋วหนังเรื่องโปรดกับคนโปรด", "นั่งดูดาวยามค่ำคืน", "จังหวะหัวใจที่เต้นตรงกัน",
+      "ความทรงจำแสนอบอุ่น", "เธอคือเซฟโซนที่ดีที่สุด", "กอดอุ่น ๆ ในวันที่เหนื่อยล้า",
+      "เดินตากลมริมชายหาด", "แวะชิมขนมเจ้าประจำ", "รูปคู่มุมเผลอสุดน่ารัก",
+      "เคียงข้างกันตลอดไปนะ", "ขอบคุณสำหรับความเข้าใจ", "รักเธอเพิ่มขึ้นในทุก ๆ วัน",
+      "สายตาที่เต็มไปด้วยความรัก", "ทุกวันคือวันพิเศษเพราะมีเธอ", "ความสุขที่จับต้องได้",
+      "อนาคตข้างหน้าขอมีเธอร่วมทาง รักเธอที่สุดในโลกเลย ♥"
+    ];
+
+    // รหัสไฟล์รูปจากโฟลเดอร์ Google Drive (ลำดับที่ 1 - 64)
+    const DRIVE_IDS = [
+      "1X0gqGmuUuJHlV1bB5FHPx6-bZxHn5UGc",
+      "1k5sfgLLbQGoE9Nackgn_5NaH6j6sUYoW",
+      "1BfV3LngPKrqDE8Q_sF_S7BvkvyYNBeuR",
+      "17U5dIzgptTwYKt3rDYkmqzqHad7u5r4_",
+      "1ESFSORWy51zWsFObkWfaRY_CcAkzI29J",
+      "1qVTsUnKeh9ihTkepBXcVg8bt4yAp5G3P",
+      "1U10bUChNR9QEDG1OtvdwEQxmzAw1lMKD",
+      "1oqSZdggl6lXF3OyG3lV-tKENp_iT2sgW",
+      "164lQRc979VXShexA-b_cn4RhLI5mIVfH",
+      "1HrV1zLJYVfP8f562FoiXKvFuzY_h2f9R",
+      "18CwmusxZN8Rx1iafnySpPeSlEOarXsgU",
+      "1cdfcoOS-Jez2H7CIfVVqUdnFwdEGYNN_",
+      "1xtQPaAi9ROrd6hhm9hTy8Hco2h9Kv-x9",
+      "1EacOMj1TOlrURzqsOTxwYi6l6lfg7JLF",
+      "102oqiodizhfjS5fBO61B6fda2-geusso",
+      "1eVfdYDXkfHtoSd-OC3KN9wZE7hhgKyMC",
+      "1lwZOl89UhPZsG3HWNaVEBjaNo1UKeFH1",
+      "1_Qj22CctRFANYCwaHSy4bSGSi_Em810B",
+      "1cQR91D0yu2R8kKJG1l6i_K3wVAH5kBDc",
+      "13jfsl6Gs6o6xDdPSg5asnwWn2w8G9VxW",
+      "1L6QNrevPqnQtq2S6WndsWxzUPPeBrEZL",
+      "1eDB86z-WuyXIlG0_2sI7CRICKyKI2M_6",
+      "1--egDuGozBzw39rldDfQyAJxNc3Id5TX",
+      "1cVp84PyYjuHDnfA8CFHmp8ZO7D1xA0D_",
+      "18kWc5-a3agSJqO-LzjfRRAYyFeBD99D7",
+      "1w5mzEm0CeTajTEB2fXKZqUigmOtyVXFg",
+      "1c5Prsw5t0xI1ja3Zc5ChmlEbkQv8_BPO",
+      "1kPxg885QBCcHlUe00fdqjtT3ODsaxBEQ",
+      "1QzNU3nbslRum5_CvoM6wPnDt1BrZTvZM",
+      "13AgempO_RG4rCt3qUqaUAVGZKZw_zfOJ",
+      "1aJsoWZRIRdZqghjJp5rZ1iCbWTiVpO4H",
+      "1PBHhdpkS_I18KyCodF1GbljPsIg7l_P7",
+      "1FuT5KSaSRsSYyyrMutQqCZ4nTRA6YkJE",
+      "1Jh8hgrmIK0FIFgzFqrnZ492t8kWj0LdC",
+      "1kKTURmVxoYq3qEvkasStEOBlBkKwc2dy",
+      "1OfrKrwv3dyI1YFiCVs8vXP1ueHq6P7Z2",
+      "1xtRhdf7UVlpLruimFdgAhf36bNDxUJ3P",
+      "1AvTO-yKefh43Qf41neATZ9PA9vkHDFoY",
+      "16LZ-K-jRwCgT-3CW5qgF2lNGihgte4gV",
+      "17HTqHUbrzc2-rF1Bzrr6M_P0mTr7m5np",
+      "1I3vt6xr2GhIDI60Sf5d4X-d8WLc1-EWg",
+      "1PswXBvEOTb3CqTwljitdzg83KhXN6h7T",
+      "1tIsfJRzMVTpJvE2007VPd-4UCQ62ZgJv",
+      "1gtM50avoM_zuBbnkDuHXi5fBlzgzAdZq",
+      "1iVH3yXCJyu2O5kY1u5NenYfHDLHOGv9c",
+      "1UChK31u1c33fC91jCTAPAsNnwnda19mG",
+      "1iytkFki-v9oyadz_iV1QWyLnDcPXKsf7",
+      "1h5SRynHIZVzcpj3-unAV0cP6BfFsJCz8",
+      "1081g1VVFUyGIJx_VLekhjGtpqrz2SWSO",
+      "1vpWNGw9jIkvvHZrhwfg5X7Tt9CQAgEx9",
+      "1tD8hHk9VnMgTIHWrQ5ArU4-vbGpthEEx",
+      "1-_JBQe5ZSGIqqhyxaGMoCfENdtFjk-Hs",
+      "1hy1aYigwwXBdPabgohzer3NqJmhj1Jzq",
+      "1BIpp7cU_wWo0LQ7ANc1tQz4KikPUXdZm",
+      "1S7rr5RZIeaZNHLYDscQyCkAGoRETI18K",
+      "1UxwXKEGZRIfY-OJr8vuRTrmxzKPmjgUV",
+      "1gFqzjXuOhO1DrvZcUdldm43R0-bc8M6h",
+      "1kvhrSDbxcAbZ8Dh3DPf-T-kzGyLafzrj",
+      "1lMyFlNTZVZ2Q0OHehlQN2fgnYlPPc7ix",
+      "1Sg2reZMqOpFmhJahjOfxZFdPyqVZhLWm",
+      "1gbEsSMTeHxnPHmeD1rmv5RijhAV3pwoF",
+      "1ZGlDg13_BO9C43VABDLZ6kD3VCZfEv0Z",
+      "1UrONCoQU7zs5gNwxWO8eMWF15aYbBWlw",
+      "1uZYFLN9MISolUNhpiuaKnkTA5dyfJgKE"
+    ];
+
+    const fallbackList = [
+      "https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=500&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=500&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=500&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=500&auto=format&fit=crop&q=80"
+    ];
+
+    function driveThumb(id, size) {
+      return "https://drive.google.com/thumbnail?id=" + id + "&sz=w" + size;
+    }
+
+    const grid = document.getElementById("galleryGrid");
+    for (let i = 1; i <= 64; i++) {
+      const card = document.createElement("div");
+      card.className = "photo-card";
+      const cap = captions64[i - 1] || "ช่วงเวลาแสนพิเศษของเรา";
+      const fb = fallbackList[(i - 1) % fallbackList.length];
+      const driveId = DRIVE_IDS[i - 1];
+
+      card.innerHTML = `
+        <div class="photo-thumb-wrap">
+          <img id="p-img-${i}" alt="Photo ${i}" loading="lazy" referrerpolicy="no-referrer">
+          <div class="photo-badge">NO. ${i}</div>
+        </div>
+        <div class="photo-caption">
+          <h5>Memory #${i}</h5>
+          <p>${cap}</p>
+        </div>
+      `;
+
+      const img = card.querySelector(`#p-img-${i}`);
+
+      // ลำดับการโหลดรูป: Google Drive -> ไฟล์ในโฟลเดอร์เดียวกัน (.jpg/.JPG/.jpeg/.png) -> รูปสำรอง
+      const sources = [
+        driveThumb(driveId, 600),
+        `${i}.jpg`, `${i}.JPG`, `${i}.jpeg`, `${i}.png`,
+        fb
+      ];
+      let srcIndex = 0;
+
+      img.onerror = function() {
+        srcIndex++;
+        if (srcIndex < sources.length) {
+          img.src = sources[srcIndex];
+        } else {
+          img.onerror = null;
+        }
+      };
+      img.src = sources[0];
+
+      card.onclick = () => {
+        const big = document.getElementById("lightboxImg");
+        // ถ้ารูปปัจจุบันมาจาก Drive ให้ขอไฟล์ขนาดใหญ่ขึ้นสำหรับ lightbox
+        if (img.src.indexOf("drive.google.com/thumbnail") !== -1) {
+          big.onerror = function() { big.onerror = null; big.src = img.src; };
+          big.src = driveThumb(driveId, 1600);
+        } else {
+          big.onerror = null;
+          big.src = img.src;
+        }
+        document.getElementById("lightboxTitle").innerText = `NO. ${i} — OUR MEMORY`;
+        document.getElementById("lightboxDesc").innerText = cap;
+        document.getElementById("lightboxModal").classList.add("active");
+      };
+
+      grid.appendChild(card);
+    }
+
+    function closeLightbox(e) {
+      if (e.target.id === "lightboxModal") document.getElementById("lightboxModal").classList.remove("active");
+    }
+    function forceCloseLightbox() { document.getElementById("lightboxModal").classList.remove("active"); }
+
+    // 3. POSTCARD FLIP
+    let isFlipped = false;
+    function togglePostcard() {
+      isFlipped = !isFlipped;
+      const inner = document.getElementById("postcardInner");
+      const front = document.getElementById("cardFront");
+      const back = document.getElementById("cardBack");
+      if (isFlipped) {
+        inner.classList.add("flipped");
+        front.style.display = "none";
+        back.style.display = "block";
+      } else {
+        inner.classList.remove("flipped");
+        front.style.display = "block";
+        back.style.display = "none";
+      }
+    }
+
+    // 4. GASHAPON
+    const coupons = [
+      { icon: "🫂", title: "คูปองกอดแน่น ๆ 10 นาที", desc: "ใช้ได้ทุกเมื่อที่ต้องการความอบอุ่น ห้ามคนโดนกอดปฏิเสธเด็ดขาด!" },
+      { icon: "🍲", title: "คูปองบุฟเฟต์/ชาบู 1 มื้อ", desc: "แฟนอยากกินร้านไหน เลือกร้านมาได้เลย มื้อนี้เลี้ยงเองเต็มที่!" },
+      { icon: "💆", title: "คูปองนวดไหล่ & นวดหลัง 15 นาที", desc: "เมื่อยล้าจากการทำงานเมื่อไหร่ ยื่นคูปองนี้มีคนดูแลทันที" },
+      { icon: "👑", title: "คูปองตามใจแฟน 1 วันเต็ม", desc: "วันนี้เธอเป็นใหญ่ อยากไปไหน อยากกินอะไร บอกมาได้เลย!" },
+      { icon: "🥤", title: "คูปองชานมไข่มุก/กาแฟแก้วโปรด", desc: "อยากเติมความหวานแก้วไหน สั่งมาเลย ส่งตรงถึงมือทันใจ" },
+      { icon: "🥺", title: "คูปองยกโทษให้ 1 ครั้ง", desc: "ถ้าเราเผลอทำตัวดื้อหรืองี่เง่า ขอใช้คูปองนี้ให้เธอยกโทษและกอดกันนะ" }
+    ];
+
+    function spinGashapon() {
+      const caps = document.getElementById("gashaCaps");
+      caps.style.transform = "rotate(360deg)";
+      caps.style.transition = "transform 0.5s ease";
+      setTimeout(() => {
+        caps.style.transform = "none";
+        const c = coupons[Math.floor(Math.random() * coupons.length)];
+        document.getElementById("couponIcon").innerText = c.icon;
+        document.getElementById("couponTitle").innerText = c.title;
+        document.getElementById("couponDesc").innerText = c.desc;
+        document.getElementById("couponModal").classList.add("active");
+      }, 500);
+    }
+    function closeCoupon() { document.getElementById("couponModal").classList.remove("active"); }
+
+    // 5. DOODLE CANVAS
+    const canvas = document.getElementById("doodleCanvas");
+    const ctx = canvas.getContext("2d");
+    let drawing = false;
+    let strokeColor = "#e63946";
+
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = strokeColor;
+
+    function getCanvasPos(e) {
+      const r = canvas.getBoundingClientRect();
+      const cx = e.touches ? e.touches[0].clientX : e.clientX;
+      const cy = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: cx - r.left, y: cy - r.top };
+    }
+
+    function startDraw(e) { drawing = true; const p = getCanvasPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }
+    function moveDraw(e) { if (!drawing) return; e.preventDefault(); const p = getCanvasPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }
+    function stopDraw() { drawing = false; }
+
+    canvas.addEventListener("mousedown", startDraw);
+    canvas.addEventListener("mousemove", moveDraw);
+    window.addEventListener("mouseup", stopDraw);
+    canvas.addEventListener("touchstart", startDraw, { passive: false });
+    canvas.addEventListener("touchmove", moveDraw, { passive: false });
+    window.addEventListener("touchend", stopDraw);
+
+    function setColor(c) { strokeColor = c; ctx.strokeStyle = c; }
+    function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+    function saveCanvas() {
+      const a = document.createElement("a");
+      a.download = "our-love-doodle.png";
+      a.href = canvas.toDataURL();
+      a.click();
+    }
+
+    // 7. BACKGROUND MUSIC (YouTube: GAVIN.D - A ROCKET TO THE MOON) — เล่นอัตโนมัติเมื่อปลดล็อกตู้เซฟ
+    const YT_VIDEO_ID = "3aCctY3DGac";
+    const bgmBtn = document.getElementById("bgmToggle");
+    const toast = document.getElementById("musicToast");
+    let ytPlayer = null;
+    let ytReady = false;
+    let wantPlay = false;
+
+    function showToast(msg) {
+      toast.innerText = msg;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 7000);
+    }
+
+    // โหลด YouTube API ตั้งแต่เปิดหน้า เพื่อให้ตัวเล่นพร้อมก่อนถึงตอนปลดล็อก
+    (function () {
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.head.appendChild(tag);
+    })();
+
+    window.onYouTubeIframeAPIReady = function () {
+      ytPlayer = new YT.Player("ytPlayerHolder", {
+        width: "200",
+        height: "200",
+        videoId: YT_VIDEO_ID,
+        playerVars: { autoplay: 0, controls: 0, loop: 1, playlist: YT_VIDEO_ID, playsinline: 1, rel: 0 },
+        events: {
+          onReady: function () {
+            ytReady = true;
+            ytPlayer.setVolume(60);
+            if (wantPlay) ytPlayer.playVideo();
+          },
+          onStateChange: function (e) {
+            if (e.data === YT.PlayerState.PLAYING) bgmBtn.classList.add("playing");
+            if (e.data === YT.PlayerState.PAUSED) bgmBtn.classList.remove("playing");
+            if (e.data === YT.PlayerState.ENDED) { ytPlayer.seekTo(0); ytPlayer.playVideo(); }
+          },
+          onError: function (e) {
+            showToast("เล่นเพลงจาก YouTube ไม่ได้ (รหัส " + e.data + ")");
+          }
+        }
+      });
+    };
+
+    function startMusic() {
+      wantPlay = true;
+      if (ytReady) ytPlayer.playVideo();
+      // ถ้าเบราว์เซอร์บล็อกการเล่นอัตโนมัติ ให้บอกให้แตะปุ่มเพลง
+      setTimeout(() => {
+        if (wantPlay && !(ytReady && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING)) {
+          showToast("แตะปุ่ม 🎵 เพื่อเปิดเพลงได้เลยนะ");
+        }
+      }, 3000);
+    }
+
+    bgmBtn.onclick = () => {
+      if (ytReady && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) {
+        wantPlay = false;
+        ytPlayer.pauseVideo();
+      } else {
+        wantPlay = true;
+        if (ytReady) ytPlayer.playVideo();
+        else showToast("กำลังโหลดเพลง… ลองแตะอีกครั้งในอีกสักครู่");
+      }
+    };
+  </script>
+</body>
+</html>
